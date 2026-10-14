@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maze Quest | Smart Maze Solver</title>
+
+<style>
+:root {
+    --bg: #0b1020;
+    --panel: #151d32;
+    --panel2: #1c2740;
+    --text: #edf2ff;
+    --muted: #94a3b8;
+    --blue: #60a5fa;
+    --green: #34d399;
+    --red: #fb7185;
+    --border: #2b3855;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    background:
+        radial-gradient(ellipse at top left, #1c3156 0, transparent 42%),
+        radial-gradient(ellipse at bottom right, #252044 0, transparent 40%),
+        var(--bg);
+    color: var(--text);
+}
+
+header {
+    text-align: center;
+    padding: 30px 16px 20px;
+}
+
+.logo {
+    font-size: 13px;
+    color: #93c5fd;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    font-weight: 800;
+}
+
+h1 {
+    margin: 10px 0;
+    font-size: clamp(28px, 5vw, 43px);
+    letter-spacing: -1px;
+}
+
+h1 span {
+    color: #60a5fa;
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+main {
+    max-width: 1250px;
+    margin: auto;
+    padding: 0 18px 35px;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px;
+    background: #121a2bcf;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    margin-bottom: 18px;
+}
+
+button, select, input {
+    font: inherit;
+}
+
+button {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 15px;
+    color: var(--text);
+    background: var(--panel2);
+    cursor: pointer;
+    transition: .2s;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: var(--blue);
+    filter: brightness(1.15);
+}
+
+button:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+button.primary {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    border: none;
+}
+
+button.success {
+    background: #087f5b;
+    border-color: #10b981;
+}
+
+button.danger {
+    color: #fecdd3;
+    border-color: #7f1d32;
+}
+
+select {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 10px;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(260px, .8fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.panel {
+    background: linear-gradient(145deg, #172139, #111827);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 19px;
+    box-shadow: 0 15px 40px #00000020;
+    min-width: 0;
+}
+
+.panel-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+h2 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.small {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.status {
+    font-size: 12px;
+    color: #93c5fd;
+    background: #1e3a5f;
+    padding: 7px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.canvas-wrap {
+    background: #080d18;
+    border: 1px solid #303b54;
+    border-radius: 12px;
+    padding: 8px;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 650px;
+    border-radius: 5px;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #cbd5e1;
+    font-size: 11px;
+}
+
+.swatch {
+    width: 13px;
+    height: 13px;
+    border-radius: 4px;
+    border: 1px solid #ffffff30;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.stat {
+    padding: 15px;
+    background: #202b43;
+    border: 1px solid #2c3a55;
+    border-radius: 12px;
+}
+
+.stat .value {
+    font-size: 25px;
+    font-weight: 800;
+    color: #93c5fd;
+    margin: 7px 0 3px;
+}
+
+.stat .label {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.section-title {
+    margin: 20px 0 12px;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.inventory {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.key-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    background: #202b43;
+    border: 1px solid #35425d;
+    border-radius: 10px;
+    color: #64748b;
+    font-size: 12px;
+    opacity: .6;
+    transition: .25s;
+}
+
+.key-chip.collected {
+    color: white;
+    opacity: 1;
+    border-color: var(--key-color);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--key-color) 25%, transparent);
+}
+
+.key-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--key-color);
+    border-radius: 50%;
+}
+
+.progress-track {
+    height: 7px;
+    background: #2b3650;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 9px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #3b82f6, #34d399);
+    transition: width .2s;
+}
+
+.message {
+    margin-top: 16px;
+    padding: 12px;
+    background: #101a2d;
+    border: 1px solid #293750;
+    border-radius: 10px;
+    color: #cbd5e1;
+    font-size: 12px;
+    line-height: 1.6;
+    min-height: 44px;
+}
+
+.range-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 13px;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: #60a5fa;
+    margin-top: 12px;
+}
+
+details {
+    margin-top: 18px;
+    color: #cbd5e1;
+    font-size: 12px;
+    line-height: 1.8;
+}
+
+summary {
+    cursor: pointer;
+    color: #93c5fd;
+    font-weight: 700;
+}
+
+footer {
+    text-align: center;
+    padding: 10px 20px 30px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+@media (max-width: 850px) {
+    .layout { grid-template-columns: 1fr; }
+    .panel { padding: 14px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">Interactive Algorithm Lab</div>
+    <h1>Maze <span>Quest</span></h1>
+    <div class="subtitle">
+        Collect keys. Unlock doors. Discover the shortest path.<br>
+        Powered by Breadth-First Search (BFS).
+    </div>
+</header>
+
+<main>
+    <div class="toolbar">
+        <button class="primary" id="generateBtn">✦ New Maze</button>
+        <button class="success" id="playBtn">▶ Play</button>
+        <button id="pauseBtn" disabled>Ⅱ Pause</button>
+        <button id="stepBtn">⏭ Step</button>
+        <button id="resetBtn">↺ Reset</button>
+        <button id="csvBtn">⬇ Download CSV</button>
+        <label class="small">Keys:
+            <select id="keyCount">
+                <option value="1">1 pair</option>
+                <option value="2">2 pairs</option>
+                <option value="3" selected>3 pairs</option>
+                <option value="4">4 pairs</option>
+                <option value="5">5 pairs</option>
+                <option value="6">6 pairs</option>
+            </select>
+        </label>
+    </div>
+
+    <div class="layout">
+        <section class="panel">
+            <div class="panel-heading">
+                <h2>🧩 Maze Explorer</h2>
+                <span class="status" id="status">READY</span>
+            </div>
+
+            <div class="canvas-wrap">
+                <canvas id="mazeCanvas" width="600" height="600"
+                    aria-label="Interactive maze visualization"></canvas>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><span class="swatch" style="background:#f8fafc"></span>Open</div>
+                <div class="legend-item"><span class="swatch" style="background:#080d18"></span>Wall</div>
+                <div class="legend-item"><span class="swatch" style="background:#22c55e"></span>Start</div>
+                <div class="legend-item"><span class="swatch" style="background:#f43f5e"></span>Exit</div>
+                <div class="legend-item"><span class="swatch" style="background:#60a5fa"></span>Search / path</div>
+                <div class="legend-item"><span class="swatch" style="background:#fbbf24"></span>Keys / doors</div>
+            </div>
+
+            <div class="range-row">
+                <label for="speed">Animation speed</label>
+                <span id="speedLabel">Normal</span>
+            </div>
+            <input type="range" id="speed" min="1" max="10" value="5">
+
+            <div class="range-row">
+                <span>Path progress</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="message" id="message" aria-live="polite">
+                Generate a maze or press Play to begin the shortest-path animation.
+            </div>
+        </section>
+
+        <aside class="panel">
+            <div class="panel-heading">
+                <h2>📊 Live Analytics</h2>
+            </div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="label">SHORTEST PATH</div>
+                    <div class="value" id="distance">—</div>
+                    <div class="small">steps</div>
+                </div>
+                <div class="stat">
+                    <div class="label">STATES EXPLORED</div>
+                    <div class="value" id="visited">0</div>
+                    <div class="small">unique states</div>
+                </div>
+                <div class="stat">
+                    <div class="label">KEYS COLLECTED</div>
+                    <div class="value" id="keysFound">0/3</div>
+                    <div class="small">in inventory</div>
+                </div>
+                <div class="stat">
+                    <div class="label">CURRENT STEP</div>
+                    <div class="value" id="currentStep">0</div>
+                    <div class="small">of solution steps</div>
+                </div>
+            </div>
+
+            <div class="section-title">🔑 KEY INVENTORY</div>
+            <div class="inventory" id="inventory"></div>
+
+            <div class="section-title">🧠 How it works</div>
+            <div class="small" style="line-height:1.9">
+                <b>1.</b> BFS explores reachable states level by level.<br>
+                <b>2.</b> Each state includes position and a key bitmask.<br>
+                <b>3.</b> A door opens only if its matching key is held.<br>
+                <b>4.</b> Parent states reconstruct the shortest route.
+            </div>
+
+            <details>
+                <summary>Algorithm & complexity</summary>
+                BFS uses a queue and records each combination of cell
+                and collected keys. With at most six key types, there
+                are at most 64 masks per cell.
+                <br><br>
+                Time: O(R × C × 2<sup>T</sup>) in the worst case.
+                <br>
+                Space: O(R × C × 2<sup>T</sup>).
+                <br><br>
+                The generated maze is a connected maze with a guaranteed
+                solution. The BFS solver independently verifies it.
+            </details>
+        </aside>
+    </div>
+</main>
+
+<footer>
+    Maze Quest · BFS Shortest-Path Visualizer · HTML, CSS & JavaScript
+</footer>
+
+<script>
+"use strict";
+
+const SIZE = 21; // Odd dimensions are required for maze generation.
+const WALL = "#080d18";
+const OPEN = "#f8fafc";
+const START_COLOR = "#22c55e";
+const EXIT_COLOR = "#f43f5e";
+const PATH_COLOR = "#60a5fa";
+
+const PALETTE = [
+    "#60a5fa", "#fbbf24", "#c084fc",
+    "#2dd4bf", "#fb923c", "#f472b6"
+];
+
+const canvas = document.getElementById("mazeCanvas");
+const ctx = canvas.getContext("2d");
+
+const ui = {
+    status: document.getElementById("status"),
+    message: document.getElementById("message"),
+    distance: document.getElementById("distance"),
+    visited: document.getElementById("visited"),
+    keysFound: document.getElementById("keysFound"),
+    currentStep: document.getElementById("currentStep"),
+    inventory: document.getElementById("inventory"),
+    progressBar: document.getElementById("progressBar"),
+    progressText: document.getElementById("progressText"),
+    speed: document.getElementById("speed"),
+    speedLabel: document.getElementById("speedLabel"),
+    play: document.getElementById("playBtn"),
+    pause: document.getElementById("pauseBtn"),
+    step: document.getElementById("stepBtn")
+};
+
+let grid = [];
+let solution = [];
+let visitedStates = 0;
+let animationIndex = 0;
+let inventory = new Set();
+let unlockedDoors = new Set();
+let collectedKeys = new Set();
+let exploredCells = new Set();
+let running = false;
+let timer = null;
+let lastResult = null;
+let activeKeyCount = 3;
+let start = { r: 1, c: 1 };
+let exit = { r: SIZE - 2, c: SIZE - 2 };
+
+function cellId(r, c) {
+    return `${r},${c}`;
+}
+
+function isInside(r, c) {
+    return r >= 0 && c >= 0 && r < SIZE && c < SIZE;
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+/* Generate a random perfect maze using randomized DFS. */
+function generateBaseMaze() {
+    grid = Array.from({ length: SIZE }, () => Array(SIZE).fill("#"));
+
+    const stack = [start];
+    grid[start.r][start.c] = ".";
+
+    while (stack.length) {
+        const current = stack[stack.length - 1];
+
+        const directions = shuffle([
+            [-2, 0], [2, 0], [0, -2], [0, 2]
+        ]);
+
+        let moved = false;
+
+        for (const [dr, dc] of directions) {
+            const nr = current.r + dr;
+            const nc = current.c + dc;
+
+            if (
+                nr > 0 && nr < SIZE - 1 &&
+                nc > 0 && nc < SIZE - 1 &&
+                grid[nr][nc] === "#"
+            ) {
+                grid[current.r + dr / 2][current.c + dc / 2] = ".";
+                grid[nr][nc] = ".";
+                stack.push({ r: nr, c: nc });
+                moved = true;
+                break;
+            }
+        }
+
+        if (!moved) stack.pop();
+    }
+
+    grid[start.r][start.c] = "S";
+    grid[exit.r][exit.c] = "E";
+}
+
+/* Find a base route to place keys before their corresponding doors. */
+function findBasePath() {
+    const queue = [start];
+    const parents = new Map();
+
+    parents.set(cellId(start.r, start.c), null);
+
+    for (let head = 0; head < queue.length; head++) {
+        const current = queue[head];
+
+        if (current.r === exit.r && current.c === exit.c) break;
+
+        for (const [dr, dc] of [
+            [-1, 0], [1, 0], [0, -1], [0, 1]
+        ]) {
+            const nr = current.r + dr;
+            const nc = current.c + dc;
+            const id = cellId(nr, nc);
+
+            if (
+                isInside(nr, nc) &&
+                grid[nr][nc] !== "#" &&
+                !parents.has(id)
+            ) {
+                parents.set(id, cellId(current.r, current.c));
+                queue.push({ r: nr, c: nc });
+            }
+        }
+    }
+
+    const path = [];
+    let id = cellId(exit.r, exit.c);
+
+    while (id !== null) {
+        const [r, c] = id.split(",").map(Number);
+        path.push({ r, c });
+        id = parents.get(id);
+    }
+
+    return path.reverse();
+}
+
+/* Put every key before its matching door on the guaranteed route. */
+function placeKeysAndDoors(keyCount) {
+    const path = findBasePath();
+    const usable = path.length - 2;
+
+    if (usable < keyCount * 2) {
+        throw new Error("Maze path is too short for the selected keys.");
+    }
+
+    for (let i = 0; i < keyCount; i++) {
+        const keyIndex = Math.floor(
+            1 + (usable - 1) * (i / keyCount)
+        );
+        const doorIndex = Math.floor(
+            1 + (usable - 1) * ((i + 1) / keyCount)
+        );
+
+        const keyCell = path[Math.max(1, keyIndex)];
+        const doorCell = path[Math.min(path.length - 2, doorIndex)];
+
+        // A separate spacing rule prevents keys and doors
+        // from accidentally occupying the same cell.
+        const actualKey = path[1 + Math.floor(
+            (path.length - 2) * (i + 0.25) / keyCount
+        )];
+        const actualDoor = path[1 + Math.floor(
+            (path.length - 2) * (i + 0.75) / keyCount
+        )];
+
+        grid[actualKey.r][actualKey.c] = String.fromCharCode(97 + i);
+        grid[actualDoor.r][actualDoor.c] = String.fromCharCode(65 + i);
+    }
+}
+
+/*
+ * BFS state:
+ * row, column, bitmask, distance.
+ * Each bit represents one collected key.
+ */
+function solveMaze() {
+    const queue = [{
+        r: start.r, c: start.c, mask: 0, dist: 0
+    }];
+
+    let head = 0;
+    const parents = new Map();
+    const startId = stateId(start.r, start.c, 0);
+    parents.set(startId, null);
+
+    let finalId = null;
+
+    while (head < queue.length) {
+        const state = queue[head++];
+        const id = stateId(state.r, state.c, state.mask);
+
+        if (state.r === exit.r && state.c === exit.c) {
+            finalId = id;
+            break;
+        }
+
+        for (const [dr, dc] of [
+            [-1, 0], [1, 0], [0, -1], [0, 1]
+        ]) {
+            const nr = state.r + dr;
+            const nc = state.c + dc;
+
+            if (!isInside(nr, nc) || grid[nr][nc] === "#") continue;
+
+            const cell = grid[nr][nc];
+            let nextMask = state.mask;
+
+            if (cell >= "a" && cell <= "f") {
+                nextMask |= 1 << (cell.charCodeAt(0) - 97);
+            }
+
+            // Check for a door, but never treat the exit as a door.
+if (
+    cell >= "A" && cell <= "F" &&
+    !(nr === exit.r && nc === exit.c)
+) {
+    const requiredBit = 1 << (cell.charCodeAt(0) - 65);
+
+    if (!(state.mask & requiredBit)) {
+        continue;
+    }
+}
+
+            const nextId = stateId(nr, nc, nextMask);
+
+            if (!parents.has(nextId)) {
+                parents.set(nextId, id);
+                queue.push({
+                    r: nr, c: nc,
+                    mask: nextMask,
+                    dist: state.dist + 1
+                });
+            }
+        }
+    }
+
+    if (finalId === null) {
+        return {
+            distance: -1,
+            path: [],
+            visited: parents.size
+        };
+    }
+
+    const path = [];
+    let id = finalId;
+
+    while (id !== null) {
+        const [r, c, mask] = id.split(",").map(Number);
+        path.push({ r, c, mask });
+        id = parents.get(id);
+    }
+
+    path.reverse();
+
+    return {
+        distance: path.length - 1,
+        path,
+        visited: parents.size
+    };
+}
+
+function stateId(r, c, mask) {
+    return `${r},${c},${mask}`;
+}
+
+function createMaze() {
+    stopAnimation();
+    activeKeyCount = Number(document.getElementById("keyCount").value);
+
+    generateBaseMaze();
+    placeKeysAndDoors(activeKeyCount);
+
+    lastResult = solveMaze();
+    solution = lastResult.path;
+    visitedStates = lastResult.visited;
+
+    resetAnimation();
+    ui.distance.textContent = lastResult.distance;
+    ui.visited.textContent = visitedStates;
+    ui.message.textContent =
+        `Maze generated successfully. BFS found a shortest route of ${lastResult.distance} steps. Press Play to watch it.`;
+}
+
+function resetAnimation() {
+    stopAnimation();
+    animationIndex = 0;
+    inventory = new Set();
+    unlockedDoors = new Set();
+    collectedKeys = new Set();
+    exploredCells = new Set();
+
+    updateInventory();
+    updateStats();
+    drawGrid();
+    setStatus("READY");
+
+    ui.play.disabled = false;
+    ui.pause.disabled = true;
+    ui.step.disabled = false;
+}
+
+function updateInventory() {
+    ui.inventory.innerHTML = "";
+
+    for (let i = 0; i < activeKeyCount; i++) {
+        const key = String.fromCharCode(97 + i);
+        const chip = document.createElement("div");
+        chip.className = "key-chip" +
+            (inventory.has(key) ? " collected" : "");
+        chip.style.setProperty("--key-color", PALETTE[i]);
+
+        const dot = document.createElement("span");
+        dot.className = "key-dot";
+        dot.style.background = PALETTE[i];
+
+        const text = document.createElement("span");
+        text.textContent = inventory.has(key)
+            ? `${key.toUpperCase()} collected`
+            : `${key.toUpperCase()} locked`;
+
+        chip.append(dot, text);
+        ui.inventory.appendChild(chip);
+    }
+
+    ui.keysFound.textContent = `${inventory.size}/${activeKeyCount}`;
+}
+
+function updateStats() {
+    ui.currentStep.textContent = Math.max(0, animationIndex);
+    const total = lastResult ? lastResult.distance : 0;
+    const percent = total === 0 ? 0 :
+        Math.min(100, Math.round(animationIndex / total * 100));
+
+    ui.progressBar.style.width = `${percent}%`;
+    ui.progressText.textContent = `${percent}%`;
+}
+
+function setStatus(text) {
+    ui.status.textContent = text;
+}
+
+function drawGrid() {
+    const tile = canvas.width / SIZE;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let r = 0; r < SIZE; r++) {
+        for (let c = 0; c < SIZE; c++) {
+            const cell = grid[r][c];
+            const id = cellId(r, c);
+            const x = c * tile;
+            const y = r * tile;
+
+            ctx.fillStyle = cell === "#" ? WALL : OPEN;
+            ctx.fillRect(x, y, tile, tile);
+
+            if (exploredCells.has(id) && cell !== "#") {
+                ctx.fillStyle = "#60a5fa38";
+                ctx.fillRect(x, y, tile, tile);
+            }
+
+            if (cell >= "a" && cell <= "f") {
+                if (!collectedKeys.has(cell)) {
+                    const index = cell.charCodeAt(0) - 97;
+                    ctx.fillStyle = PALETTE[index];
+                    ctx.beginPath();
+                    ctx.arc(x + tile / 2, y + tile / 2, tile * .34, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.fillStyle = "#101827";
+                    ctx.font = `bold ${tile * .52}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(cell.toUpperCase(), x + tile / 2, y + tile / 2);
+                }
+            } else if (
+    cell >= "A" && cell <= "F" &&
+    !(r === exit.r && c === exit.c)
+) {
+                const index = cell.charCodeAt(0) - 65;
+
+                if (unlockedDoors.has(id)) {
+                    ctx.fillStyle = "#d1fae5";
+                    ctx.fillRect(x + 2, y + 2, tile - 4, tile - 4);
+                    ctx.fillStyle = "#047857";
+                    ctx.font = `bold ${tile * .55}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("✓", x + tile / 2, y + tile / 2);
+                } else {
+                    ctx.fillStyle = PALETTE[index];
+                    ctx.fillRect(x + tile * .13, y + tile * .13,
+                        tile * .74, tile * .74);
+
+                    ctx.fillStyle = "#111827";
+                    ctx.font = `bold ${tile * .45}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(cell, x + tile / 2, y + tile / 2);
+                }
+            }
+
+            if (cell === "S" || cell === "E") {
+                ctx.fillStyle = cell === "S" ? START_COLOR : EXIT_COLOR;
+                ctx.beginPath();
+                ctx.roundRect(x + 2, y + 2, tile - 4, tile - 4, tile * .2);
+                ctx.fill();
+
+                ctx.fillStyle = "#fff";
+                ctx.font = `bold ${tile * .55}px Arial`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(cell, x + tile / 2, y + tile / 2);
+            }
+
+            ctx.strokeStyle = "#cbd5e11c";
+            ctx.lineWidth = .6;
+            ctx.strokeRect(x, y, tile, tile);
+        }
+    }
+
+    // Draw the actual shortest path taken so far.
+    if (solution.length) {
+        for (let i = 0; i < animationIndex; i++) {
+            const p = solution[i];
+            const cell = grid[p.r][p.c];
+
+            if (cell === "S" || cell === "E") continue;
+
+            const x = p.c * tile;
+            const y = p.r * tile;
+
+            ctx.fillStyle = "#3b82f64d";
+            ctx.fillRect(x + 2, y + 2, tile - 4, tile - 4);
+        }
+    }
+
+    // Draw the moving explorer.
+    if (solution.length && animationIndex > 0) {
+        const p = solution[Math.min(animationIndex, solution.length - 1)];
+
+        ctx.save();
+        ctx.shadowColor = "#38bdf8";
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = "#38bdf8";
+        ctx.beginPath();
+        ctx.arc(
+            p.c * tile + tile / 2,
+            p.r * tile + tile / 2,
+            tile * .23, 0, Math.PI * 2
+        );
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+function advanceOneStep() {
+    if (animationIndex >= solution.length) {
+        finishAnimation();
+        return;
+    }
+
+    const p = solution[animationIndex];
+    const cell = grid[p.r][p.c];
+    const id = cellId(p.r, p.c);
+
+    exploredCells.add(id);
+
+    if (cell >= "a" && cell <= "f") {
+        inventory.add(cell);
+        collectedKeys.add(cell);
+        ui.message.textContent =
+            `🔑 Key ${cell.toUpperCase()} collected! Its matching door can now be opened.`;
+        updateInventory();
+    }
+
+    if (cell >= "A" && cell <= "F") {
+        unlockedDoors.add(id);
+        ui.message.textContent =
+            `🔓 Door ${cell} unlocked using key ${cell.toLowerCase()}.`;
+    }
+
+    if (cell === "E") {
+        ui.message.textContent =
+            `🏆 Exit reached! Shortest path completed in ${lastResult.distance} steps.`;
+    }
+
+    animationIndex++;
+    updateStats();
+    drawGrid();
+
+    if (animationIndex >= solution.length) {
+        finishAnimation();
+    }
+}
+
+function finishAnimation() {
+    stopAnimation();
+    setStatus("COMPLETED");
+    ui.play.disabled = true;
+    ui.pause.disabled = true;
+    ui.step.disabled = true;
+    ui.message.textContent =
+        `🏆 Maze solved! Shortest distance: ${lastResult.distance} steps. Download the CSV to save the solution.`;
+}
+
+function getInterval() {
+    return 650 - Number(ui.speed.value) * 58;
+}
+
+function playAnimation() {
+    if (!solution.length) return;
+
+    if (animationIndex >= solution.length) {
+        resetAnimation();
+    }
+
+    if (running) return;
+
+    running = true;
+    setStatus("SOLVING");
+    ui.play.disabled = true;
+    ui.pause.disabled = false;
+    ui.step.disabled = true;
+
+    timer = setInterval(advanceOneStep, getInterval());
+}
+
+function stopAnimation() {
+    running = false;
+    if (timer !== null) {
+        clearInterval(timer);
+        timer = null;
+    }
+}
+
+function pauseAnimation() {
+    stopAnimation();
+    setStatus("PAUSED");
+    ui.play.disabled = false;
+    ui.pause.disabled = true;
+    ui.step.disabled = false;
+}
+
+function stepAnimation() {
+    if (running || animationIndex >= solution.length) return;
+    setStatus("STEPPING");
+    advanceOneStep();
+}
+
+function downloadCSV() {
+    if (!grid.length || !lastResult) return;
+
+    const output = grid.map(row => row.slice());
+
+    for (const p of solution) {
+        const cell = output[p.r][p.c];
+
+        if (cell === "." || cell === "S" || cell === "E") {
+            output[p.r][p.c] = "x";
+        } else if (cell >= "a" && cell <= "f") {
+            output[p.r][p.c] = cell + "x";
+        } else if (cell >= "A" && cell <= "F") {
+            output[p.r][p.c] = cell + "x";
+        }
+    }
+
+    const csv = output.map(row =>
+        row.map(value => `"${value.replace(/"/g, '""')}"`).join(",")
+    ).join("\r\n");
+
+    const blob = new Blob([csv], {
+        type: "text/csv;charset=utf-8;"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "solved_maze.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+function updateSpeedLabel() {
+    const speed = Number(ui.speed.value);
+    ui.speedLabel.textContent =
+        speed <= 3 ? "Slow" : speed <= 7 ? "Normal" : "Fast";
+
+    if (running) {
+        clearInterval(timer);
+        timer = setInterval(advanceOneStep, getInterval());
+    }
+}
+
+document.getElementById("generateBtn").addEventListener("click", createMaze);
+ui.play.addEventListener("click", playAnimation);
+ui.pause.addEventListener("click", pauseAnimation);
+ui.step.addEventListener("click", stepAnimation);
+document.getElementById("resetBtn").addEventListener("click", resetAnimation);
+document.getElementById("csvBtn").addEventListener("click", downloadCSV);
+ui.speed.addEventListener("input", updateSpeedLabel);
+
+document.getElementById("keyCount").addEventListener("change", createMaze);
+
+// Draw an initial maze when the page loads.
+createMaze();
+updateSpeedLabel();
+</script>
+
+</body>
+</html>
+```
